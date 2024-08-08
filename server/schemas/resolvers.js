@@ -6,7 +6,7 @@ const { signToken, AuthenticationError } = require('../utils/auth');
 const resolvers = {
     Query: {
         // get a single user by either their id or their username
-        getUser: async (parent, args, context) => {
+        me: async (parent, args, context) => {
 
             if (context.user) {
                 const user = await User.findById(context.user.id).populate('savedBooks');
@@ -20,7 +20,7 @@ const resolvers = {
 
     Mutation: {
         // create a user, sign a token, and send it back (to client/src/components/SignUpForm.js)
-        createUser: async (parent, { username, email, password }) => {
+        addUser: async (parent, { username, email, password }) => {
             const user = await User.create({ username, email, password });
             const token = signToken(user);
 
@@ -49,20 +49,12 @@ const resolvers = {
 
         // save a book to a user's `savedBooks` field by adding it to the set (to prevent duplicates)
         // user comes from `req.user` created in the auth middleware function
-        saveBook: async (parent, { authors, description, bookId, image, link, title }, context) => {
+        saveBook: async (parent, { bookInfo }, context) => {
             if (context.user) {
                 const book = await User.findOneAndUpdate(
                     { _id: context.user._id },
                     { $addToSet: 
-                        { savedBooks: {
-                            authors,
-                            description, 
-                            bookId, 
-                            image: image, 
-                            link, 
-                            title
-                            } 
-                        } 
+                        { savedBooks: bookInfo } 
                     },
                     { new: true, runValidators: true }
                 );
@@ -74,7 +66,7 @@ const resolvers = {
         },
 
         // remove a book from `savedBooks`
-        async deleteBook(parent, { bookId }, context) {
+        async removeBook(parent, { bookId }, context) {
             if (context.user) {
                 const book = await User.findOneAndUpdate(
                     { _id: context.user._id },
