@@ -6,7 +6,7 @@ const { signToken, AuthenticationError } = require('../utils/auth');
 const resolvers = {
     Query: {
         // get a single user by either their id or their username
-        getSingleUser: async (parent, args, context) => {
+        getUser: async (parent, args, context) => {
 
             if (context.user) {
                 const user = await User.findById(context.user.id).populate('savedBooks');
@@ -20,8 +20,8 @@ const resolvers = {
 
     Mutation: {
         // create a user, sign a token, and send it back (to client/src/components/SignUpForm.js)
-        createUser: async (parent, args) => {
-            const user = await User.create(args);
+        createUser: async (parent, { username, email, password }) => {
+            const user = await User.create({ username, email, password });
             const token = signToken(user);
 
             return { token, user };
@@ -29,8 +29,8 @@ const resolvers = {
 
         // login a user, sign a token, and send it back (to client/src/components/LoginForm.js)
         // {body} is destructured req.body
-        login: async (parent, { username, email, password }) => {
-            const user = await User.findOne({ $or: [{ username }, { email }] });
+        login: async (parent, { email, password }) => {
+            const user = await User.findOne({ email });
             
             if (!user) {
                 throw AuthenticationError;
